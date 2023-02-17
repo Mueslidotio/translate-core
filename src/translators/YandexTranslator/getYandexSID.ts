@@ -3,6 +3,7 @@
 let lastYandexRequestSIDTime: number | null = null;
 let yandexTranslateSID: string | null = null;
 let yandexSIDNotFound: boolean = false;
+const axios = require('axios');
 
 export function getYandexSID() {
 	return new Promise<void>((resolve) => {
@@ -24,30 +25,24 @@ export function getYandexSID() {
 		}
 
 		if (updateYandexSid) {
-			lastYandexRequestSIDTime = Date.now();
+            lastYandexRequestSIDTime = Date.now();
+            axios.get('https://translate.yandex.net/website-widget/v1/widget.js?widgetId=ytWidget&pageLang=es&widgetTheme=light&autoMode=false').then((response) => {
+                var result = response.data.match(/sid\:\s\'[0-9a-f\.]+/);
 
-			const http = new XMLHttpRequest();
-			http.open(
-				'GET',
-				'https://translate.yandex.net/website-widget/v1/widget.js?widgetId=ytWidget&pageLang=es&widgetTheme=light&autoMode=false',
-			);
-			http.send();
-			http.onload = () => {
-				const result = http.responseText.match(/sid\:\s\'[0-9a-f\.]+/);
-				if (result && result[0] && result[0].length > 7) {
-					yandexTranslateSID = result[0].substring(6);
-					yandexSIDNotFound = false;
-				} else {
-					yandexSIDNotFound = true;
-				}
-				resolve();
-			};
-			http.onerror = (e) => {
-				console.error(e);
-				resolve();
-			};
-		} else {
-			resolve();
-		}
+                if (result && result[0] && result[0].length > 7) {
+                    yandexTranslateSID = result[0].substring(6);
+                    yandexSIDNotFound = false;
+                } else {
+                    yandexSIDNotFound = true;
+                }
+
+                resolve();
+            }).catch((error) => {
+                console.error(error);
+                resolve();
+            });
+        } else {
+            resolve();
+        }
 	}).then(() => yandexTranslateSID);
 }
